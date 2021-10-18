@@ -19,7 +19,7 @@ export const Title = styled.Text`
   font-size: ${RFValue(14)}px;
 `;
 
-export const Ammount = styled.Text<TransactionProps>`
+export const Amount = styled.Text<TransactionProps>`
   font-family: ${({ theme }) => theme.fonts.regular};
   font-size: ${RFValue(20)}px;
   color: ${({ theme, type }) =>

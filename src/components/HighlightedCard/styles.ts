@@ -50,7 +50,7 @@ export const Icon = styled(Feather)<TypeProps>`
     `};
 `;
 export const Footer = styled.View``;
-export const Ammount = styled.Text<TypeProps>`
+export const Amount = styled.Text<TypeProps>`
   font-family: ${({ theme }) => theme.fonts.medium};
   font-size: ${RFValue(32)}px;
 
