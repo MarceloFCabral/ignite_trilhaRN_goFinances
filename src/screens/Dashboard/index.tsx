@@ -31,6 +31,7 @@ import {
   LogoutButton,
   LoadContainer,
 } from "./styles";
+import { useAuth } from "../../hooks/auth";
 
 export interface DataListProps extends TransactionCardProps {
   id: string;
@@ -49,35 +50,43 @@ interface HighlightedData {
 
 export const Dashboard = () => {
   const theme = useTheme();
+  const { signOut, user } = useAuth();
+
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<DataListProps[]>([]);
   const [highlightedData, setHighlightedData] = useState<HighlightedData>(
     {} as HighlightedData
   );
 
+  const { entries, expenses, balance } = highlightedData;
+
   function getLastTransactionDate(type: "negative" | "positive") {
+    const filteredColletion = data.filter((transaction) =>
+      type === "positive"
+        ? transaction.type === "positive"
+        : transaction.type === "negative"
+    );
+
+    if (filteredColletion.length === 0) {
+      return null;
+    }
+
     const lastTransaction = new Date(
       Math.max(
-        ...data
-          .filter((transaction: DataListProps) =>
-            type === "positive"
-              ? transaction.type === "positive"
-              : transaction.type === "negative"
-          )
-          .map((transaction: DataListProps) => {
-            const separatedDate = transaction.date.split("/");
-            return new Date(
-              "20" +
-                separatedDate[2] +
-                "-" +
-                separatedDate[1] +
-                "-" +
-                separatedDate[0]
-            ).getTime();
-          })
+        ...filteredColletion.map((transaction: DataListProps) => {
+          const separatedDate = transaction.date.split("/");
+          return new Date(
+            "20" +
+              separatedDate[2] +
+              "-" +
+              separatedDate[1] +
+              "-" +
+              separatedDate[0]
+          ).getTime();
+        })
       )
     );
-    console.log(lastTransaction);
+
     return `${lastTransaction.getDate()} de ${lastTransaction.toLocaleString(
       "pt-BR",
       {
@@ -87,7 +96,7 @@ export const Dashboard = () => {
   }
 
   async function loadTransactions() {
-    const dataKey = "@gofinances:transactions";
+    const dataKey = `@gofinances:transactions_user:${user.id}`;
     const response = await AsyncStorage.getItem(dataKey);
     const transactions = response ? JSON.parse(response) : [];
 
@@ -116,20 +125,26 @@ export const Dashboard = () => {
     );
     const balance = entriesSum - expensesSum;
     const lastExpense = getLastTransactionDate("negative");
+    const lastEntry = getLastTransactionDate("positive");
+    const lastTransaction =
+      (lastExpense || lastEntry) && lastExpense > lastEntry
+        ? lastExpense
+        : lastEntry;
+
     setData(formattedTransactions);
 
     setHighlightedData({
       entries: {
         total: getBRL(entriesSum),
-        lastTransaction: getLastTransactionDate("positive"),
+        lastTransaction: lastEntry ? lastEntry : null,
       },
       expenses: {
         total: getBRL(expensesSum),
-        lastTransaction: lastExpense,
+        lastTransaction: lastExpense ? lastExpense : null,
       },
       balance: {
         total: getBRL(balance),
-        lastTransaction: `01 a ${lastExpense}`,
+        lastTransaction: lastTransaction ? `01 a ${lastTransaction}` : null,
       },
     });
     setIsLoading(false);
@@ -154,15 +169,15 @@ export const Dashboard = () => {
               <UserInfo>
                 <Photo
                   source={{
-                    uri: "https://avatars.githubusercontent.com/u/51683012?v=4",
+                    uri: user.photo,
                   }}
                 />
                 <User>
                   <UserGreeting>Olá,</UserGreeting>
-                  <UserName>Marcelo França</UserName>
+                  <UserName>{user.name}</UserName>
                 </User>
               </UserInfo>
-              <LogoutButton onPress={() => {}}>
+              <LogoutButton onPress={signOut}>
                 <Icon name="power" />
               </LogoutButton>
             </UserWrapper>
@@ -171,26 +186,32 @@ export const Dashboard = () => {
             <HighlightedCard
               type="up"
               title="Entradas"
-              amount={highlightedData.entries.total}
+              amount={entries.total}
               lastTransaction={
-                "Última entrada no dia " +
-                highlightedData.entries.lastTransaction
+                entries.lastTransaction
+                  ? `Última entrada em ${entries.lastTransaction}`
+                  : "Não há entradas!"
               }
             />
             <HighlightedCard
               type="down"
               title="Saídas"
-              amount={highlightedData.expenses.total}
+              amount={expenses.total}
               lastTransaction={
-                "Última saída no dia " +
-                highlightedData.expenses.lastTransaction
+                expenses.lastTransaction
+                  ? `Última saída em ${expenses.lastTransaction}`
+                  : "Não há saídas!"
               }
             />
             <HighlightedCard
               type="total"
               title="Total"
-              amount={highlightedData.balance.total}
-              lastTransaction={highlightedData.balance.lastTransaction}
+              amount={balance.total}
+              lastTransaction={
+                balance.lastTransaction
+                  ? `${balance.lastTransaction}`
+                  : "Não há transações!"
+              }
             />
           </HighlightedCards>
           <Transactions>
