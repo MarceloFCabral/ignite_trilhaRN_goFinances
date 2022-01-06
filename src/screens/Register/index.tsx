@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Keyboard, Modal, TouchableWithoutFeedback, Alert } from "react-native";
 
 import * as Yup from "yup";
@@ -143,13 +143,14 @@ export function Register() {
               />
             </TransactionTypes>
             <CategorySelectButton
+              testID="category-button"
               title={category.name}
               onPress={handleOpenSelectCategoryModal}
             />
           </Fields>
           <Button title="Enviar" onPress={handleSubmit(handleRegister)} />
         </Form>
-        <Modal visible={categoryModalOpen}>
+        <Modal testID="category-modal" visible={categoryModalOpen}>
           <CategorySelect
             category={category}
             setCategory={setCategory}
